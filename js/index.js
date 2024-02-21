@@ -24,48 +24,52 @@ async function getCountryPopulation(country){
 //--------------------------------------------------------
 //  Manual - call one by one...
 //--------------------------------------------------------
-function manual() {
-    getCountryPopulation("France")
-        .then( population => {
-            console.log(`population of France is ${population}`);
-            return getCountryPopulation("Germany")
-        })
-        .then( population => console.log(`population of Germany is ${population}`))
-        .catch(err=> console.log('Error in manual: ',err.message));
 
-    getCountryPopulation("Netherlands")
-        .then( population => {
-            console.log(`population of Russia is ${population}`);
-            return getCountryPopulation("United Kingdom")
-        })
-        .then( population => console.log(`population of United Kingdom is ${population}`))
-    
-    getCountryPopulation("Sweden")
-        .then( population => {
-            console.log(`population of Sweden is ${population}`);
-            return getCountryPopulation("Greece")
-        })
-        .then( population => console.log(`population of Greece is ${population}`))
-        .catch(err=> console.log('Error in manual: ',err.message));
+
+async function manual() {
+    try {
+            const francePopulation = await getCountryPopulation("France");
+            console.log(`population of France is ${francePopulation}`);
+
+            const germanyPopulation = await getCountryPopulation("Germany");
+            console.log(`population of Germany is ${germanyPopulation}`);
+
+            const netherlandsPopulation = await getCountryPopulation("Netherlands");
+            console.log(`population of Netherlands is ${netherlandsPopulation}`);
+
+            const ukPopulation = await getCountryPopulation("United Kingdom");
+            console.log(`population of United Kingdom is ${ukPopulation}`);
+
+            const swedenPopulation = await getCountryPopulation("Sweden");
+            console.log(`population of Sweden is ${swedenPopulation}`);
+
+            const greecePopulation = await getCountryPopulation("Greece");
+            console.log(`population of Greece is ${greecePopulation}`);
+
+            const russiaPopulation = await getCountryPopulation("Russia");
+            console.log(`population of Greece is ${russiaPopulation}`);
+        } 
+            catch (err) {
+            console.log('Error in manual:', err.message);
+    }
 }
-manual()
 
+// manual();
 
 //------------------------------
 //   Sequential processing 
 //------------------------------
 const countries = ["France","Russia","Germany","United Kingdom","Portugal","Spain","Netherlands","Sweden","Greece","Czechia","Romania","Israel"];
 
-function sequence() {
-    Promise.each(countries, (country) => {
-        return getCountryPopulation(country)
-            .then(population => {
-                console.log(`Population of ${country} is ${population}`);
-            })
-            .catch(err => {
-                console.log(`Error for ${country}: ${err.message}`);
-            });
-        });
+async function sequence() {
+    for (const country of countries) {
+        try {
+            const population = await getCountryPopulation(country);
+            console.log(`Population of ${country} is ${population}`);
+        } catch (err) {
+            console.log(`Error for ${country}: ${err.message}`);
+        }
+    }
 }
 
 // sequence();
@@ -74,45 +78,30 @@ function sequence() {
 //  Parallel processing 
 //--------------------------------------------------------
 
-function parallelWithOrderedCountries({ concurrency = 1 } = {}) {
+async function parallel({ concurrency = 6 } = {}) {
     console.log(`Processing population of ${countries.length} countries in ${concurrency} parallel requests`);
 
-    const results = [];
-    let running = 0;
-    let index = 0;
+    const result = [];
 
-    function run() {
-        while (running < concurrency && index < countries.length) {
-            const country = countries[index];
-            index++;
-            running++;
-            Promise.resolve(getCountryPopulation(country))
-                .then(population => {
-                    results.push({ country, population });
-                })
-                .catch(error => {
-                    results.push({ country, error });
-                })
-                .finally(() => {
-                    running--;
-                    if (index === countries.length && running === 0) {
-                        console.log('All promises resolved');
-                        results.forEach(({ country, population, error }) => {
-                            if (error) {
-                                console.error(`Error for ${country}: ${error.message}`);
-                            } else {
-                                console.log(`Population of ${country} is ${population}`);
-                            }
-                        });
-                        console.log('Got population for ALL countries');
-                    } else {
-                        run({ concurrency: 2 });
-                    }
-                });
+    for (const country of countries) {
+        try {
+            const population = await getCountryPopulation(country);
+            result.push({ country, population});
+            
+            } catch (error) {
+            result.push({ country, error});
         }
-    }
-
-    run();
 }
 
-// parallelWithOrderedCountries({ concurrency: 6 });
+    console.log('all promises resolved');
+        result.forEach(({ country, population, error}) => {
+            if (error) {
+                console.error(`Error for ${country}: ${error.message}`);
+            } else {
+                console.log(`Population of ${country} is ${population}`);
+            }
+        });
+        console.log('Done printing population');
+}
+
+parallel({ concurrency: 6 });
