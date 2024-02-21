@@ -1,5 +1,5 @@
 
-function getCountryPopulation(country){
+async function getCountryPopulation(country){
     return new Promise((resolve,reject)=> {
         const url = `https://countriesnow.space/api/v0.1/countries/population`;
         const options = {
@@ -48,7 +48,7 @@ function manual() {
         .then( population => console.log(`population of Greece is ${population}`))
         .catch(err=> console.log('Error in manual: ',err.message));
 }
-// manual()
+manual()
 
 
 //------------------------------
@@ -115,4 +115,4 @@ function parallelWithOrderedCountries({ concurrency = 1 } = {}) {
     run();
 }
 
-parallelWithOrderedCountries({ concurrency: 6 });
+// parallelWithOrderedCountries({ concurrency: 6 });
