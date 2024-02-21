@@ -74,26 +74,45 @@ function sequence() {
 //  Parallel processing 
 //--------------------------------------------------------
 
-function parallel(items, mapper, { concurrency = Infinity } = {}) {
-    console.log(`Processing ${items.length} items in ${concurrency} parallel requests`);
+function parallelWithOrderedCountries({ concurrency = 1 } = {}) {
+    console.log(`Processing population of ${countries.length} countries in ${concurrency} parallel requests`);
 
-    return Promise.map(items, (item, index) => {
-        return Promise.resolve(mapper(item, index, items.length))
-            .then(result => ({ index, result }))
-            .catch(err => ({ index, error: err }));
-    }, { concurrency })
-    .then(results => {
-        results.sort((a, b) => a.index - b.index);
+    const results = [];
+    let running = 0;
+    let index = 0;
 
-        results.forEach(({ index, result, error }) => {
-            if (error) {
-                 console.error(`Error for item at index ${index}: ${error.message}`);
-                } else {
-                    console.log(`Population of ${items[index]} is ${result}`);
+    function run() {
+        while (running < concurrency && index < countries.length) {
+            const country = countries[index];
+            index++;
+            running++;
+            Promise.resolve(getCountryPopulation(country))
+                .then(population => {
+                    results.push({ country, population });
+                })
+                .catch(error => {
+                    results.push({ country, error });
+                })
+                .finally(() => {
+                    running--;
+                    if (index === countries.length && running === 0) {
+                        console.log('All promises resolved');
+                        results.forEach(({ country, population, error }) => {
+                            if (error) {
+                                console.error(`Error for ${country}: ${error.message}`);
+                            } else {
+                                console.log(`Population of ${country} is ${population}`);
+                            }
+                        });
+                        console.log('Got population for ALL countries');
+                    } else {
+                        run({ concurrency: 2 });
                     }
                 });
-        console.log('all done!');
-    });
+        }
+    }
+
+    run();
 }
 
-parallel(countries, getCountryPopulation, { concurrency: 2 });
+parallelWithOrderedCountries({ concurrency: 6 });
